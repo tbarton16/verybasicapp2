@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
-import { type ExecutionResult } from "@shared/schema";
+import { type ExecutionResult, type Model, AVAILABLE_MODELS } from "@shared/schema";
 import { 
   Play, 
   Square, 
@@ -19,9 +19,17 @@ import {
   Trash2,
   Loader2
 } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export default function Home() {
   const [sessionId] = useState(() => "demo-session-main");
+  const [selectedModel, setSelectedModel] = useState<Model>("gpt-nano");
   const { toast } = useToast();
 
   // Status polling query
@@ -72,7 +80,10 @@ export default function Home() {
   });
 
   const startMutation = useMutation({
-    mutationFn: () => apiRequest('POST', '/api/start-execution', { sessionId }),
+    mutationFn: () => apiRequest('POST', '/api/start-execution', { 
+      sessionId,
+      model: selectedModel 
+    }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/execution-status', sessionId] });
     },
@@ -211,18 +222,37 @@ export default function Home() {
             </div>
 
             <div className="flex items-center space-x-4 mb-4">
-              <Button
-                onClick={handleStart}
-                disabled={isRunning || startMutation.isPending}
-                className="bg-primary hover:bg-blue-700 text-white px-6 py-3 shadow-sm hover:shadow-md"
-              >
-                {startMutation.isPending ? (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                ) : (
-                  <Play className="w-4 h-4 mr-2" />
-                )}
-                {isRunning ? 'Running...' : 'Start Execution'}
-              </Button>
+              <div className="flex items-center space-x-4">
+                <Select
+                  value={selectedModel}
+                  onValueChange={(value: Model) => setSelectedModel(value)}
+                >
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Select model" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {AVAILABLE_MODELS.map((model) => (
+                      <SelectItem key={model} value={model}>
+                        {model}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Button
+                  onClick={handleStart}
+                  disabled={isRunning || startMutation.isPending}
+                  className="bg-primary hover:bg-blue-700 text-white px-6 py-3 shadow-sm hover:shadow-md"
+                >
+                  {startMutation.isPending ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <Play className="w-4 h-4 mr-2" />
+                  )}
+                  {isRunning ? 'Running...' : 'Start Execution'}
+                </Button>
+
+              </div>
 
               <Button
                 onClick={handleStop}

@@ -54,6 +54,7 @@ export class MemStorage implements IStorage {
       error: insertResult.error ?? null,
       duration: insertResult.duration ?? null,
       tokens: insertResult.tokens ?? null,
+      model: insertResult.model ?? 'gpt-nano',
       createdAt: new Date()
     };
     this.executionResults.set(id, result);

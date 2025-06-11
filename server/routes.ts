@@ -1,10 +1,12 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertExecutionResultSchema, type ExecutionResult } from "@shared/schema";
+import { insertExecutionResultSchema, type ExecutionResult, type Model, AVAILABLE_MODELS } from "@shared/schema";
 import fs from "fs/promises";
 import path from "path";
+import { fileURLToPath } from 'url';
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const activeSessions = new Map<string, { isRunning: boolean; shouldStop: boolean }>();
 
 // Status tracking for polling
@@ -16,22 +18,42 @@ const sessionStatus = new Map<string, {
   completed: boolean;
 }>();
 
-async function callOpenAIAPI(prompt: string): Promise<{ response: string; tokens: number }> {
+async function callOpenAIAPI(prompt: string, model: Model): Promise<{ response: string; tokens: number }> {
   const apiKey = process.env.OPENAI_API_KEY || process.env.API_KEY || "";
-  const apiUrl = process.env.OPENAI_API_URL || "https://api.openai.com/v1/chat/completions";
   
   if (!apiKey) {
-    throw new Error("OpenAI API key not configured");
+    throw new Error("API key not configured");
   }
 
-  const response = await fetch(apiUrl, {
+  // Map our model names to actual API model names and their endpoints
+  const modelConfig: Record<Model, { modelName: string; apiUrl: string }> = {
+    'gpt-nano': {
+      modelName: 'gpt-3.5-turbo',
+      apiUrl: process.env.OPENAI_API_URL || 'https://api.openai.com/v1/chat/completions'
+    },
+    'gemma': {
+      modelName: 'gemma-7b',
+      apiUrl: process.env.GEMMA_API_URL || 'https://api.gemma.ai/v1/chat/completions'
+    },
+    'qwen': {
+      modelName: 'qwen-7b',
+      apiUrl: process.env.QWEN_API_URL || 'https://api.qwen.ai/v1/chat/completions'
+    },
+    'llama': {
+      modelName: 'llama-2-7b',
+      apiUrl: process.env.LLAMA_API_URL || 'https://api.llama.ai/v1/chat/completions'
+    }
+  };
+
+  const config = modelConfig[model];
+  const response = await fetch(config.apiUrl, {
     method: "POST",
     headers: {
       "Authorization": `Bearer ${apiKey}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: "gpt-3.5-turbo",
+      model: config.modelName,
       messages: [{ role: "user", content: prompt }],
       max_tokens: 1000,
     }),
@@ -39,7 +61,7 @@ async function callOpenAIAPI(prompt: string): Promise<{ response: string; tokens
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(`OpenAI API error: ${response.status} ${errorText}`);
+    throw new Error(`API error (${model}): ${response.status} ${errorText}`);
   }
 
   const data = await response.json();
@@ -51,7 +73,8 @@ async function callOpenAIAPI(prompt: string): Promise<{ response: string; tokens
 
 async function loadPrompts(): Promise<string[]> {
   try {
-    const promptsPath = path.join(import.meta.dirname, "prompts.txt");
+    const promptsPath = path.join(__dirname, "prompts.txt");
+    console.log(promptsPath)
     const content = await fs.readFile(promptsPath, "utf-8");
     return content
       .split("\n")
@@ -62,8 +85,8 @@ async function loadPrompts(): Promise<string[]> {
   }
 }
 
-async function executePrompts(sessionId: string) {
-  console.log(`Starting execution for session: ${sessionId}`);
+async function executePrompts(sessionId: string, model: Model) {
+  console.log(`Starting execution for session: ${sessionId} with model: ${model}`);
   const session = activeSessions.get(sessionId);
   if (!session) {
     console.log(`No session found for: ${sessionId}`);
@@ -114,12 +137,13 @@ async function executePrompts(sessionId: string) {
         error: null,
         duration: null,
         tokens: null,
+        model,
       });
 
       const startTime = Date.now();
       
       try {
-        const { response, tokens } = await callOpenAIAPI(prompt);
+        const { response, tokens } = await callOpenAIAPI(prompt, model);
         const duration = Date.now() - startTime;
 
         await storage.updateExecutionResult(pendingResult.id, {
@@ -170,10 +194,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // API Routes
   app.post("/api/start-execution", async (req, res) => {
     try {
-      const { sessionId } = req.body;
+      const { sessionId, model } = req.body;
       
       if (!sessionId) {
         return res.status(400).json({ error: "Session ID required" });
+      }
+
+      if (!model || !AVAILABLE_MODELS.includes(model)) {
+        return res.status(400).json({ error: "Invalid model selected" });
       }
 
       let session = activeSessions.get(sessionId);
@@ -190,7 +218,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       session.shouldStop = false;
 
       // Start execution in background
-      executePrompts(sessionId).catch((error) => {
+      executePrompts(sessionId, model).catch((error) => {
         console.error("Execution error:", error);
         sessionStatus.set(sessionId, {
           isRunning: false,

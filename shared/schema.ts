@@ -18,6 +18,7 @@ export const executionResults = pgTable("execution_results", {
   error: text("error"),
   duration: integer("duration"), // in milliseconds
   tokens: integer("tokens"),
+  model: text("model").notNull().default('gpt-nano'),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
@@ -44,3 +45,7 @@ export type WebSocketMessage =
   | { type: 'execution_stopped'; sessionId: string }
   | { type: 'execution_completed'; sessionId: string }
   | { type: 'error'; sessionId: string; error: string };
+
+// Model types
+export const AVAILABLE_MODELS = ['gpt-nano', 'gemma', 'qwen', 'llama'] as const;
+export type Model = typeof AVAILABLE_MODELS[number];
