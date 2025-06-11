@@ -25,14 +25,14 @@ export default function Home() {
   const { toast } = useToast();
 
   // Status polling query
-  const { data: executionStatus } = useQuery<{
+  const { data: executionStatus, isLoading: statusLoading } = useQuery<{
     isRunning: boolean;
     currentPrompt: number;
     totalPrompts: number;
     error: string | null;
     completed: boolean;
   }>({
-    queryKey: ['/api/execution-status', sessionId],
+    queryKey: [`/api/execution-status/${sessionId}`],
     refetchInterval: 1000, // Poll every second
     enabled: true,
   });
@@ -51,13 +51,13 @@ export default function Home() {
         description: hasError,
         variant: "destructive"
       });
-    } else if (isCompleted && !isRunning) {
+    } else if (isCompleted && !isRunning && totalPrompts > 0) {
       toast({ 
         title: "Execution completed", 
         description: "All prompts have been processed successfully."
       });
     }
-  }, [hasError, isCompleted, isRunning, toast]);
+  }, [hasError, isCompleted, isRunning, totalPrompts, toast]);
 
   // Queries and mutations
   const { data: promptsCount } = useQuery<{ count: number }>({
@@ -66,9 +66,9 @@ export default function Home() {
   });
 
   const { data: results = [], isLoading: resultsLoading } = useQuery<ExecutionResult[]>({
-    queryKey: ['/api/execution-results', sessionId],
+    queryKey: [`/api/execution-results/${sessionId}`],
     staleTime: 0,
-    refetchInterval: isRunning ? 1000 : false, // Poll results while running
+    refetchInterval: 1000, // Always poll for results
   });
 
   const startMutation = useMutation({
