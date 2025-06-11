@@ -31,7 +31,7 @@ export default function Home() {
 
   // WebSocket connection
   const { sendMessage, isConnected } = useWebSocket(
-    `ws://localhost:5000?sessionId=${sessionId}`,
+    `ws://${window.location.host}?sessionId=${sessionId}`,
     (message: WebSocketMessage) => {
       switch (message.type) {
         case 'execution_started':
@@ -70,7 +70,7 @@ export default function Home() {
   }, [isConnected]);
 
   // Queries and mutations
-  const { data: promptsCount } = useQuery({
+  const { data: promptsCount } = useQuery<{ count: number }>({
     queryKey: ['/api/prompts/count'],
     staleTime: Infinity,
   });
@@ -212,7 +212,7 @@ export default function Home() {
               <div className="text-right">
                 <div className="text-sm text-slate-500">Total Prompts</div>
                 <div className="text-2xl font-bold text-slate-900">
-                  {promptsCount?.count || 0}
+                  {(promptsCount as { count: number } | undefined)?.count || 0}
                 </div>
               </div>
             </div>

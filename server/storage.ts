@@ -45,8 +45,15 @@ export class MemStorage implements IStorage {
   async createExecutionResult(insertResult: InsertExecutionResult): Promise<ExecutionResult> {
     const id = this.currentResultId++;
     const result: ExecutionResult = { 
-      ...insertResult, 
       id,
+      sessionId: insertResult.sessionId,
+      promptIndex: insertResult.promptIndex,
+      prompt: insertResult.prompt,
+      response: insertResult.response ?? null,
+      status: insertResult.status,
+      error: insertResult.error ?? null,
+      duration: insertResult.duration ?? null,
+      tokens: insertResult.tokens ?? null,
       createdAt: new Date()
     };
     this.executionResults.set(id, result);

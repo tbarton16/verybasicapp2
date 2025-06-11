@@ -1,12 +1,10 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
-import { insertExecutionResultSchema, type WebSocketMessage, type ExecutionResult } from "@shared/schema";
+import { insertExecutionResultSchema, type ExecutionResult } from "@shared/schema";
 import fs from "fs/promises";
 import path from "path";
 
-const activeConnections = new Map<string, WebSocket>();
 const activeSessions = new Map<string, { isRunning: boolean; shouldStop: boolean }>();
 
 async function callOpenAIAPI(prompt: string): Promise<{ response: string; tokens: number }> {
@@ -55,12 +53,14 @@ async function loadPrompts(): Promise<string[]> {
   }
 }
 
-function broadcastToSession(sessionId: string, message: WebSocketMessage) {
-  const ws = activeConnections.get(sessionId);
-  if (ws && ws.readyState === WebSocket.OPEN) {
-    ws.send(JSON.stringify(message));
-  }
-}
+// Status tracking for polling
+const sessionStatus = new Map<string, {
+  isRunning: boolean;
+  currentPrompt: number;
+  totalPrompts: number;
+  error: string | null;
+  completed: boolean;
+}>();
 
 async function executePrompts(sessionId: string) {
   const session = activeSessions.get(sessionId);
@@ -69,22 +69,34 @@ async function executePrompts(sessionId: string) {
   try {
     const prompts = await loadPrompts();
     
-    broadcastToSession(sessionId, {
-      type: "execution_started",
-      sessionId,
+    // Update session status
+    sessionStatus.set(sessionId, {
+      isRunning: true,
+      currentPrompt: 0,
       totalPrompts: prompts.length,
+      error: null,
+      completed: false
     });
 
     for (let i = 0; i < prompts.length; i++) {
       if (session.shouldStop) {
-        broadcastToSession(sessionId, {
-          type: "execution_stopped",
-          sessionId,
+        sessionStatus.set(sessionId, {
+          isRunning: false,
+          currentPrompt: i + 1,
+          totalPrompts: prompts.length,
+          error: null,
+          completed: false
         });
         return;
       }
 
       const prompt = prompts[i];
+      
+      // Update current prompt
+      const status = sessionStatus.get(sessionId);
+      if (status) {
+        status.currentPrompt = i + 1;
+      }
       
       // Create pending result
       const pendingResult = await storage.createExecutionResult({
@@ -98,64 +110,47 @@ async function executePrompts(sessionId: string) {
         tokens: null,
       });
 
-      broadcastToSession(sessionId, {
-        type: "prompt_processing",
-        sessionId,
-        promptIndex: i + 1,
-        prompt,
-      });
-
       const startTime = Date.now();
       
       try {
         const { response, tokens } = await callOpenAIAPI(prompt);
         const duration = Date.now() - startTime;
 
-        const completedResult = await storage.updateExecutionResult(pendingResult.id, {
+        await storage.updateExecutionResult(pendingResult.id, {
           response,
           status: "success",
           duration,
           tokens,
         });
-
-        if (completedResult) {
-          broadcastToSession(sessionId, {
-            type: "prompt_completed",
-            sessionId,
-            result: completedResult,
-          });
-        }
       } catch (error) {
         const duration = Date.now() - startTime;
         const errorMessage = error instanceof Error ? error.message : "Unknown error";
 
-        const failedResult = await storage.updateExecutionResult(pendingResult.id, {
+        await storage.updateExecutionResult(pendingResult.id, {
           status: "error",
           error: errorMessage,
           duration,
         });
-
-        if (failedResult) {
-          broadcastToSession(sessionId, {
-            type: "prompt_completed",
-            sessionId,
-            result: failedResult,
-          });
-        }
       }
     }
 
-    broadcastToSession(sessionId, {
-      type: "execution_completed",
-      sessionId,
+    // Mark as completed
+    sessionStatus.set(sessionId, {
+      isRunning: false,
+      currentPrompt: prompts.length,
+      totalPrompts: prompts.length,
+      error: null,
+      completed: true
     });
 
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
-    broadcastToSession(sessionId, {
-      type: "error",
-      sessionId,
+    sessionStatus.set(sessionId, {
+      isRunning: false,
+      currentPrompt: 0,
+      totalPrompts: 0,
       error: errorMessage,
+      completed: false
     });
   } finally {
     session.isRunning = false;
