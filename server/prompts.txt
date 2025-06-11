@@ -1,0 +1,23 @@
+Analyze the following code and suggest improvements for performance and readability. Focus on modern JavaScript best practices and optimization techniques.
+
+Create a comprehensive test strategy for a REST API that handles user authentication, data validation, and rate limiting. Include both unit and integration test scenarios.
+
+Design a scalable microservices architecture for an e-commerce platform handling millions of users. Include service discovery, load balancing, and data consistency strategies.
+
+Explain the concept of machine learning model interpretability and provide practical techniques for making black-box models more transparent and explainable.
+
+Write a detailed guide on implementing CI/CD pipelines for a modern web application using Docker, Kubernetes, and automated testing frameworks.
+
+Describe the key principles of secure coding practices and provide examples of how to prevent common vulnerabilities like SQL injection, XSS, and CSRF attacks.
+
+Explain how to implement efficient caching strategies for a high-traffic web application, including Redis, CDN usage, and browser caching techniques.
+
+Create a monitoring and alerting strategy for distributed systems, including metrics collection, log aggregation, and incident response procedures.
+
+Design a database schema for a social media platform that can handle user relationships, posts, comments, and real-time notifications efficiently.
+
+Explain the concept of eventual consistency in distributed systems and provide practical examples of when and how to implement it effectively.
+
+Write a comprehensive guide on API design best practices, including RESTful principles, versioning strategies, and documentation standards.
+
+Describe how to implement real-time features in web applications using WebSockets, Server-Sent Events, and modern messaging protocols.
