@@ -7,6 +7,15 @@ import path from "path";
 
 const activeSessions = new Map<string, { isRunning: boolean; shouldStop: boolean }>();
 
+// Status tracking for polling
+const sessionStatus = new Map<string, {
+  isRunning: boolean;
+  currentPrompt: number;
+  totalPrompts: number;
+  error: string | null;
+  completed: boolean;
+}>();
+
 async function callOpenAIAPI(prompt: string): Promise<{ response: string; tokens: number }> {
   const apiKey = process.env.OPENAI_API_KEY || process.env.API_KEY || "";
   const apiUrl = process.env.OPENAI_API_URL || "https://api.openai.com/v1/chat/completions";
@@ -52,15 +61,6 @@ async function loadPrompts(): Promise<string[]> {
     throw new Error("Failed to load prompts file");
   }
 }
-
-// Status tracking for polling
-const sessionStatus = new Map<string, {
-  isRunning: boolean;
-  currentPrompt: number;
-  totalPrompts: number;
-  error: string | null;
-  completed: boolean;
-}>();
 
 async function executePrompts(sessionId: string) {
   const session = activeSessions.get(sessionId);
@@ -160,32 +160,6 @@ async function executePrompts(sessionId: string) {
 
 export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
-  const wss = new WebSocketServer({ server: httpServer });
-
-  // WebSocket connection handling
-  wss.on("connection", (ws, req) => {
-    const sessionId = new URL(req.url!, `http://${req.headers.host}`).searchParams.get("sessionId");
-    
-    if (!sessionId) {
-      ws.close(1008, "Session ID required");
-      return;
-    }
-
-    activeConnections.set(sessionId, ws);
-    activeSessions.set(sessionId, { isRunning: false, shouldStop: false });
-
-    ws.on("close", () => {
-      activeConnections.delete(sessionId);
-      const session = activeSessions.get(sessionId);
-      if (session) {
-        session.shouldStop = true;
-      }
-    });
-
-    ws.on("error", (error) => {
-      console.error("WebSocket error:", error);
-    });
-  });
 
   // API Routes
   app.post("/api/start-execution", async (req, res) => {
@@ -196,9 +170,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Session ID required" });
       }
 
-      const session = activeSessions.get(sessionId);
+      let session = activeSessions.get(sessionId);
       if (!session) {
-        return res.status(400).json({ error: "Session not found" });
+        session = { isRunning: false, shouldStop: false };
+        activeSessions.set(sessionId, session);
       }
 
       if (session.isRunning) {
@@ -226,9 +201,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Session ID required" });
       }
 
-      const session = activeSessions.get(sessionId);
+      let session = activeSessions.get(sessionId);
       if (!session) {
-        return res.status(400).json({ error: "Session not found" });
+        session = { isRunning: false, shouldStop: false };
+        activeSessions.set(sessionId, session);
       }
 
       session.shouldStop = true;
@@ -237,6 +213,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Stop execution error:", error);
       res.status(500).json({ error: "Failed to stop execution" });
+    }
+  });
+
+  app.get("/api/execution-status/:sessionId", async (req, res) => {
+    try {
+      const { sessionId } = req.params;
+      const status = sessionStatus.get(sessionId) || {
+        isRunning: false,
+        currentPrompt: 0,
+        totalPrompts: 0,
+        error: null,
+        completed: false
+      };
+      res.json(status);
+    } catch (error) {
+      console.error("Get status error:", error);
+      res.status(500).json({ error: "Failed to get status" });
     }
   });
 
@@ -255,6 +248,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { sessionId } = req.params;
       await storage.clearExecutionResults(sessionId);
+      sessionStatus.delete(sessionId);
       res.json({ success: true });
     } catch (error) {
       console.error("Clear results error:", error);

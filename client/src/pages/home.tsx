@@ -1,13 +1,12 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { useWebSocket } from "@/hooks/use-websocket";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
-import { type ExecutionResult, type WebSocketMessage } from "@shared/schema";
+import { type ExecutionResult } from "@shared/schema";
 import { 
   Play, 
   Square, 
@@ -23,51 +22,42 @@ import {
 
 export default function Home() {
   const [sessionId] = useState(() => `session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`);
-  const [isRunning, setIsRunning] = useState(false);
-  const [currentPrompt, setCurrentPrompt] = useState(0);
-  const [totalPrompts, setTotalPrompts] = useState(0);
-  const [connectionStatus, setConnectionStatus] = useState<'connected' | 'disconnected'>('disconnected');
   const { toast } = useToast();
 
-  // WebSocket connection
-  const { sendMessage, isConnected } = useWebSocket(
-    `ws://${window.location.host}?sessionId=${sessionId}`,
-    (message: WebSocketMessage) => {
-      switch (message.type) {
-        case 'execution_started':
-          setIsRunning(true);
-          setTotalPrompts(message.totalPrompts);
-          setCurrentPrompt(0);
-          break;
-        case 'prompt_processing':
-          setCurrentPrompt(message.promptIndex);
-          break;
-        case 'prompt_completed':
-          queryClient.invalidateQueries({ queryKey: ['/api/execution-results', sessionId] });
-          break;
-        case 'execution_stopped':
-          setIsRunning(false);
-          toast({ title: "Execution stopped", description: "Prompt execution has been stopped." });
-          break;
-        case 'execution_completed':
-          setIsRunning(false);
-          toast({ title: "Execution completed", description: "All prompts have been processed successfully." });
-          break;
-        case 'error':
-          setIsRunning(false);
-          toast({ 
-            title: "Execution error", 
-            description: message.error,
-            variant: "destructive"
-          });
-          break;
-      }
-    }
-  );
+  // Status polling query
+  const { data: executionStatus } = useQuery<{
+    isRunning: boolean;
+    currentPrompt: number;
+    totalPrompts: number;
+    error: string | null;
+    completed: boolean;
+  }>({
+    queryKey: ['/api/execution-status', sessionId],
+    refetchInterval: 1000, // Poll every second
+    enabled: true,
+  });
 
+  const isRunning = executionStatus?.isRunning || false;
+  const currentPrompt = executionStatus?.currentPrompt || 0;
+  const totalPrompts = executionStatus?.totalPrompts || 0;
+  const hasError = executionStatus?.error;
+  const isCompleted = executionStatus?.completed;
+
+  // Handle status changes
   useEffect(() => {
-    setConnectionStatus(isConnected ? 'connected' : 'disconnected');
-  }, [isConnected]);
+    if (hasError) {
+      toast({ 
+        title: "Execution error", 
+        description: hasError,
+        variant: "destructive"
+      });
+    } else if (isCompleted && !isRunning) {
+      toast({ 
+        title: "Execution completed", 
+        description: "All prompts have been processed successfully."
+      });
+    }
+  }, [hasError, isCompleted, isRunning, toast]);
 
   // Queries and mutations
   const { data: promptsCount } = useQuery<{ count: number }>({
@@ -78,10 +68,14 @@ export default function Home() {
   const { data: results = [], isLoading: resultsLoading } = useQuery<ExecutionResult[]>({
     queryKey: ['/api/execution-results', sessionId],
     staleTime: 0,
+    refetchInterval: isRunning ? 1000 : false, // Poll results while running
   });
 
   const startMutation = useMutation({
     mutationFn: () => apiRequest('POST', '/api/start-execution', { sessionId }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/execution-status', sessionId] });
+    },
     onError: (error: Error) => {
       toast({
         title: "Failed to start execution",
@@ -93,6 +87,10 @@ export default function Home() {
 
   const stopMutation = useMutation({
     mutationFn: () => apiRequest('POST', '/api/stop-execution', { sessionId }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/execution-status', sessionId] });
+      toast({ title: "Execution stopped", description: "Prompt execution has been stopped." });
+    },
     onError: (error: Error) => {
       toast({
         title: "Failed to stop execution",
@@ -106,6 +104,7 @@ export default function Home() {
     mutationFn: () => apiRequest('DELETE', `/api/execution-results/${sessionId}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/execution-results', sessionId] });
+      queryClient.invalidateQueries({ queryKey: ['/api/execution-status', sessionId] });
       toast({ title: "Results cleared", description: "All execution results have been cleared." });
     },
     onError: (error: Error) => {
@@ -118,14 +117,6 @@ export default function Home() {
   });
 
   const handleStart = () => {
-    if (!isConnected) {
-      toast({
-        title: "Connection required",
-        description: "Please wait for WebSocket connection to establish.",
-        variant: "destructive",
-      });
-      return;
-    }
     startMutation.mutate();
   };
 
@@ -187,11 +178,13 @@ export default function Home() {
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-2">
                 <div className={`w-2 h-2 rounded-full ${
-                  connectionStatus === 'connected' 
+                  isRunning 
                     ? 'bg-success animate-pulse' 
-                    : 'bg-error'
+                    : 'bg-slate-400'
                 }`} />
-                <span className="text-sm text-slate-600 capitalize">{connectionStatus}</span>
+                <span className="text-sm text-slate-600 capitalize">
+                  {isRunning ? 'Running' : 'Ready'}
+                </span>
               </div>
             </div>
           </div>
@@ -220,7 +213,7 @@ export default function Home() {
             <div className="flex items-center space-x-4 mb-4">
               <Button
                 onClick={handleStart}
-                disabled={isRunning || !isConnected || startMutation.isPending}
+                disabled={isRunning || startMutation.isPending}
                 className="bg-primary hover:bg-blue-700 text-white px-6 py-3 shadow-sm hover:shadow-md"
               >
                 {startMutation.isPending ? (
