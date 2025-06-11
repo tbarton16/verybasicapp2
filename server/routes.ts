@@ -63,11 +63,17 @@ async function loadPrompts(): Promise<string[]> {
 }
 
 async function executePrompts(sessionId: string) {
+  console.log(`Starting execution for session: ${sessionId}`);
   const session = activeSessions.get(sessionId);
-  if (!session) return;
+  if (!session) {
+    console.log(`No session found for: ${sessionId}`);
+    return;
+  }
 
   try {
+    console.log("Loading prompts...");
     const prompts = await loadPrompts();
+    console.log(`Loaded ${prompts.length} prompts`);
     
     // Update session status
     sessionStatus.set(sessionId, {
@@ -184,7 +190,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       session.shouldStop = false;
 
       // Start execution in background
-      executePrompts(sessionId).catch(console.error);
+      executePrompts(sessionId).catch((error) => {
+        console.error("Execution error:", error);
+        sessionStatus.set(sessionId, {
+          isRunning: false,
+          currentPrompt: 0,
+          totalPrompts: 0,
+          error: error.message,
+          completed: false
+        });
+      });
 
       res.json({ success: true });
     } catch (error) {
