@@ -29,7 +29,10 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
-    const res = await fetch(queryKey[0] as string, {
+    const url = queryKey[0] as string;
+    console.log('Making API request to:', url);
+    
+    const res = await fetch(url, {
       credentials: "include",
     });
 
@@ -38,7 +41,9 @@ export const getQueryFn: <T>(options: {
     }
 
     await throwIfResNotOk(res);
-    return await res.json();
+    const data = await res.json();
+    console.log('API response:', data);
+    return data;
   };
 
 export const queryClient = new QueryClient({
@@ -47,11 +52,13 @@ export const queryClient = new QueryClient({
       queryFn: getQueryFn({ on401: "throw" }),
       refetchInterval: false,
       refetchOnWindowFocus: false,
-      staleTime: Infinity,
-      retry: false,
+      staleTime: 0,
+      retry: 3,
+      retryDelay: 1000,
     },
     mutations: {
-      retry: false,
+      retry: 3,
+      retryDelay: 1000,
     },
   },
 });

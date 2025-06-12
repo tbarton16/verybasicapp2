@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
-import { type ExecutionResult, type Model, AVAILABLE_MODELS } from "@shared/schema";
+import { type ExecutionResult, type Model, type PromptFile, AVAILABLE_MODELS } from "@shared/schema";
 import { 
   Play, 
   Square, 
@@ -26,24 +26,55 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ScoreChart } from "@/components/ScoreChart";
 
 export default function Home() {
   const [sessionId] = useState(() => "demo-session-main");
   const [selectedModel, setSelectedModel] = useState<Model>("gpt-nano");
+  const [selectedPromptFile, setSelectedPromptFile] = useState<PromptFile>("");
   const { toast } = useToast();
 
+  // Fetch available prompt files
+  const { data: promptFiles = { files: [] } } = useQuery<{ files: PromptFile[] }>({
+    queryKey: ['/api/prompt-files'],
+    staleTime: 30000, // Cache for 30 seconds
+  });
+
+  // Set initial prompt file when available
+  useEffect(() => {
+    if (promptFiles.files.length > 0 && !selectedPromptFile) {
+      setSelectedPromptFile(promptFiles.files[0]);
+    }
+  }, [promptFiles.files, selectedPromptFile]);
+
   // Status polling query
-  const { data: executionStatus, isLoading: statusLoading } = useQuery<{
+  const { data: executionStatus, isLoading: statusLoading, error: statusError } = useQuery<{
     isRunning: boolean;
     currentPrompt: number;
     totalPrompts: number;
     error: string | null;
     completed: boolean;
+    runningScore1: number;
+    runningScore2: number;
   }>({
     queryKey: [`/api/execution-status/${sessionId}`],
     refetchInterval: 1000, // Poll every second
     enabled: true,
+    retry: 3,
+    retryDelay: 1000,
   });
+
+  // Handle errors
+  useEffect(() => {
+    if (statusError) {
+      console.error('Error fetching status:', statusError);
+      toast({
+        title: "Error fetching status",
+        description: statusError instanceof Error ? statusError.message : "Failed to fetch status",
+        variant: "destructive",
+      });
+    }
+  }, [statusError, toast]);
 
   const isRunning = executionStatus?.isRunning || false;
   const currentPrompt = executionStatus?.currentPrompt || 0;
@@ -67,22 +98,26 @@ export default function Home() {
     }
   }, [hasError, isCompleted, isRunning, totalPrompts, toast]);
 
-  // Queries and mutations
+  // Update the prompts count query to include the selected prompt file
   const { data: promptsCount } = useQuery<{ count: number }>({
-    queryKey: ['/api/prompts/count'],
-    staleTime: Infinity,
+    queryKey: ['/api/prompts/count', selectedPromptFile],
+    enabled: !!selectedPromptFile,
+    staleTime: 30000,
   });
 
-  const { data: results = [], isLoading: resultsLoading } = useQuery<ExecutionResult[]>({
+  const { data: results = [], isLoading: resultsLoading, error: resultsError } = useQuery<ExecutionResult[]>({
     queryKey: [`/api/execution-results/${sessionId}`],
     staleTime: 0,
     refetchInterval: 1000, // Always poll for results
+    retry: 3, // Retry failed requests 3 times
+    retryDelay: 1000, // Wait 1 second between retries
   });
 
   const startMutation = useMutation({
     mutationFn: () => apiRequest('POST', '/api/start-execution', { 
       sessionId,
-      model: selectedModel 
+      model: selectedModel,
+      promptFile: selectedPromptFile
     }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/execution-status', sessionId] });
@@ -174,6 +209,22 @@ export default function Home() {
     return duration >= 1000 ? `${(duration / 1000).toFixed(1)}s` : `${duration}ms`;
   };
 
+  // Handle errors
+  useEffect(() => {
+    if (resultsError) {
+      console.error('Error fetching results:', resultsError);
+      toast({
+        title: "Error fetching results",
+        description: resultsError instanceof Error ? resultsError.message : "Failed to fetch results",
+        variant: "destructive",
+      });
+    }
+  }, [resultsError, toast]);
+
+  // Add debug logging
+  console.log('Execution Status:', executionStatus);
+  console.log('Results:', results);
+
   return (
     <div className="bg-slate-50 min-h-screen">
       {/* Header */}
@@ -184,7 +235,7 @@ export default function Home() {
               <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
                 <Bot className="text-white w-4 h-4" />
               </div>
-              <h1 className="text-xl font-semibold text-slate-900">AI Prompt Runner</h1>
+              <h1 className="text-xl font-semibold text-slate-900">Headroom Calclator</h1>
             </div>
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-2">
@@ -210,13 +261,13 @@ export default function Home() {
               <div>
                 <h2 className="text-lg font-semibold text-slate-900">Prompt Execution Control</h2>
                 <p className="text-sm text-slate-600 mt-1">
-                  Execute prompts from server file against OpenAI-compatible endpoint
+                  Choose a model and an evaluation benchmark to run.
                 </p>
               </div>
               <div className="text-right">
                 <div className="text-sm text-slate-500">Total Prompts</div>
                 <div className="text-2xl font-bold text-slate-900">
-                  {(promptsCount as { count: number } | undefined)?.count || 0}
+                  {promptsCount?.count || 1321}
                 </div>
               </div>
             </div>
@@ -239,9 +290,25 @@ export default function Home() {
                   </SelectContent>
                 </Select>
 
+                <Select
+                  value={selectedPromptFile}
+                  onValueChange={(value: PromptFile) => setSelectedPromptFile(value)}
+                >
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Select prompt file" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {promptFiles.files.map((file) => (
+                      <SelectItem key={file} value={file}>
+                        {file}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
                 <Button
                   onClick={handleStart}
-                  disabled={isRunning || startMutation.isPending}
+                  disabled={isRunning || startMutation.isPending || !selectedPromptFile}
                   className="bg-primary hover:bg-blue-700 text-white px-6 py-3 shadow-sm hover:shadow-md"
                 >
                   {startMutation.isPending ? (
@@ -332,6 +399,35 @@ export default function Home() {
               </Button>
             </div>
           </div>
+
+          {/* Debug section */}
+          <div className="bg-slate-100 p-4 rounded-lg mb-4">
+            <h3 className="font-medium mb-2">Debug Information:</h3>
+            <pre className="text-sm">
+              {JSON.stringify({
+                hasExecutionStatus: !!executionStatus,
+                isRunning: executionStatus?.isRunning,
+                currentPrompt: executionStatus?.currentPrompt,
+                totalPrompts: executionStatus?.totalPrompts,
+                score1: executionStatus?.runningScore1,
+                score2: executionStatus?.runningScore2
+              }, null, 2)}
+            </pre>
+          </div>
+
+          {/* Score Chart */}
+          {executionStatus ? (
+            <div className="border border-slate-200 rounded-lg p-4 mb-4">
+              <ScoreChart 
+                score1={executionStatus.runningScore1 || 0} 
+                score2={executionStatus.runningScore2 || 0} 
+              />
+            </div>
+          ) : (
+            <div className="text-slate-500 text-center p-4">
+              Waiting for execution status...
+            </div>
+          )}
 
           {resultsLoading ? (
             <Card>
