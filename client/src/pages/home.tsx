@@ -538,6 +538,19 @@ export default function Home() {
                         )}
                       </div>
                     </div>
+
+                    {/* Expected Answer - Only show when status is success */}
+                    {result.status === 'success' && result.answer && (
+                      <div className="mt-4">
+                        <div className="flex items-center space-x-2 mb-2">
+                          <CheckCircle className="w-4 h-4 text-green-500" />
+                          <span className="text-sm font-medium text-slate-700">Expected Answer</span>
+                        </div>
+                        <div className="bg-green-50 rounded-lg p-4 font-mono text-sm text-green-800 border border-green-200">
+                          {result.answer}
+                        </div>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               ))}

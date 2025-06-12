@@ -54,6 +54,7 @@ export class MemStorage implements IStorage {
       error: insertResult.error ?? null,
       duration: insertResult.duration ?? null,
       tokens: insertResult.tokens ?? null,
+      score: insertResult.score ?? null,
       model: insertResult.model ?? 'gpt-nano',
       createdAt: new Date()
     };
@@ -62,18 +63,37 @@ export class MemStorage implements IStorage {
   }
 
   async getExecutionResultsBySession(sessionId: string): Promise<ExecutionResult[]> {
-    return Array.from(this.executionResults.values())
-      .filter(result => result.sessionId === sessionId)
-      .sort((a, b) => a.promptIndex - b.promptIndex);
+    console.log('Storage: Getting results for session:', sessionId);
+    try {
+      const results = Array.from(this.executionResults.values())
+        .filter(result => result.sessionId === sessionId)
+        .sort((a, b) => a.promptIndex - b.promptIndex);
+      
+      console.log(`Storage: Found ${results.length} results for session ${sessionId}`);
+      return results;
+    } catch (error) {
+      console.error('Storage: Error getting results:', error);
+      throw new Error(`Failed to get execution results: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   }
 
   async updateExecutionResult(id: number, updates: Partial<ExecutionResult>): Promise<ExecutionResult | undefined> {
-    const existing = this.executionResults.get(id);
-    if (!existing) return undefined;
-    
-    const updated = { ...existing, ...updates };
-    this.executionResults.set(id, updated);
-    return updated;
+    console.log('Storage: Updating result:', { id, updates });
+    try {
+      const existing = this.executionResults.get(id);
+      if (!existing) {
+        console.log('Storage: No existing result found for id:', id);
+        return undefined;
+      }
+      
+      const updated = { ...existing, ...updates };
+      this.executionResults.set(id, updated);
+      console.log('Storage: Updated result:', updated);
+      return updated;
+    } catch (error) {
+      console.error('Storage: Error updating result:', error);
+      throw new Error(`Failed to update execution result: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   }
 
   async clearExecutionResults(sessionId: string): Promise<void> {
