@@ -5,6 +5,7 @@ import { insertExecutionResultSchema, type ExecutionResult, type Model, AVAILABL
 import fs from "fs/promises";
 import path from "path";
 import { fileURLToPath } from 'url';
+import { GoogleGenAI } from "@google/genai";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const activeSessions = new Map<string, { isRunning: boolean; shouldStop: boolean }>();
@@ -24,7 +25,23 @@ async function callOpenAIAPI(prompt: string, model: Model): Promise<{ response: 
   if (!apiKey) {
     throw new Error("API key not configured");
   }
-
+  if (model === 'gemma') {
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const response = await ai.models.generateContent({
+      model: "gemini-2.0-flash",
+      contents: prompt,
+      config: {
+        maxOutputTokens: 500
+      },
+    });
+    if (!response.text) {
+      throw new Error("No response from model");
+    }
+    return {
+      response: response.text,
+      tokens: 0,
+    };
+  }
   // Map our model names to actual API model names and their endpoints
   const modelConfig: Record<Model, { modelName: string; apiUrl: string }> = {
     'gpt-nano': {
@@ -32,7 +49,7 @@ async function callOpenAIAPI(prompt: string, model: Model): Promise<{ response: 
       apiUrl: process.env.OPENAI_API_URL || 'https://api.openai.com/v1/chat/completions'
     },
     'gemma': {
-      modelName: 'gemma-7b',
+      modelName: 'gemini-2.0-flash',
       apiUrl: process.env.GEMMA_API_URL || 'https://api.gemma.ai/v1/chat/completions'
     },
     'qwen': {
@@ -73,7 +90,7 @@ async function callOpenAIAPI(prompt: string, model: Model): Promise<{ response: 
 
 async function loadPrompts(): Promise<string[]> {
   try {
-    const promptsPath = path.join(__dirname, "prompts.txt");
+    const promptsPath = path.join(__dirname, "..", "server", "prompts.txt");
     console.log(promptsPath)
     const content = await fs.readFile(promptsPath, "utf-8");
     return content

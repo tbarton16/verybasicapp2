@@ -1,8 +1,8 @@
-Analyze the following code and suggest improvements for performance and readability. Focus on modern JavaScript best practices and optimization techniques.
+Which model are you? Analyze the following code and suggest improvements for performance and readability. Focus on modern JavaScript best practices and optimization techniques.
 
-Create a comprehensive test strategy for a REST API that handles user authentication, data validation, and rate limiting. Include both unit and integration test scenarios.
+Which model are you? Create a comprehensive test strategy for a REST API that handles user authentication, data validation, and rate limiting. Include both unit and integration test scenarios.
 
-Design a scalable microservices architecture for an e-commerce platform handling millions of users. Include service discovery, load balancing, and data consistency strategies.
+Who trained you? Design a scalable microservices architecture for an e-commerce platform handling millions of users. Include service discovery, load balancing, and data consistency strategies.
 
 Explain the concept of machine learning model interpretability and provide practical techniques for making black-box models more transparent and explainable.
 
