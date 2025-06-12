@@ -270,6 +270,7 @@ async function executePrompts(sessionId: string, model: Model, promptFile: Promp
         duration: null,
         tokens: null,
         model,
+        answer: answer,
       });
 
       const startTime = Date.now();
@@ -314,6 +315,7 @@ async function executePrompts(sessionId: string, model: Model, promptFile: Promp
           duration,
           tokens: singleTokens + totalTokens,
           score: singleScore,
+          answer: answer,
         });
       } catch (error) {
         const duration = Date.now() - startTime;

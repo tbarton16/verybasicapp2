@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, real } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -18,7 +18,9 @@ export const executionResults = pgTable("execution_results", {
   error: text("error"),
   duration: integer("duration"), // in milliseconds
   tokens: integer("tokens"),
+  score: real("score"), // Score between 0 and 1
   model: text("model").notNull().default('gpt-nano'),
+  answer: text("answer"), // Expected answer for the prompt
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
@@ -47,5 +49,18 @@ export type WebSocketMessage =
   | { type: 'error'; sessionId: string; error: string };
 
 // Model types
-export const AVAILABLE_MODELS = ['gpt-nano', 'gemma', 'qwen', 'llama'] as const;
-export type Model = typeof AVAILABLE_MODELS[number];
+export type Model = 'gpt-nano' | 'gemma' | 'qwen' | 'llama';
+
+export const AVAILABLE_MODELS: Model[] = ['gpt-nano', 'gemma', 'qwen', 'llama'];
+
+// PromptFile type is now a string that represents the filename without extension
+export type PromptFile = string;
+
+// Function to get available prompt files
+let _availablePromptFiles: PromptFile[] = [];
+export function getAvailablePromptFiles(): PromptFile[] {
+  return _availablePromptFiles;
+}
+export function setAvailablePromptFiles(files: PromptFile[]): void {
+  _availablePromptFiles = files;
+}

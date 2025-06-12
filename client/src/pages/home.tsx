@@ -533,8 +533,23 @@ export default function Home() {
                           </div>
                         ) : result.status === 'pending' ? (
                           'Waiting for AI response...'
+                        ) : result.response ? (
+                          <div>
+                            {(() => {
+                              const parts = result.response.split(/(\d+)/);
+                              const numbers = result.response.match(/\d+/g) || [];
+                              const lastNumber = numbers[numbers.length - 1];
+                              
+                              return parts.map((part, index) => {
+                                if (part === lastNumber) {
+                                  return <span key={index} className="bg-yellow-200 text-yellow-900 px-1 rounded font-bold">{part}</span>;
+                                }
+                                return part;
+                              });
+                            })()}
+                          </div>
                         ) : (
-                          result.response
+                          'No response'
                         )}
                       </div>
                     </div>
@@ -543,10 +558,27 @@ export default function Home() {
                     {result.status === 'success' && result.answer && (
                       <div className="mt-4">
                         <div className="flex items-center space-x-2 mb-2">
-                          <CheckCircle className="w-4 h-4 text-green-500" />
+                          {result.score === 1 ? (
+                            <CheckCircle className="w-4 h-4 text-green-500" />
+                          ) : (
+                            <XCircle className="w-4 h-4 text-red-500" />
+                          )}
                           <span className="text-sm font-medium text-slate-700">Expected Answer</span>
+                          {result.score !== undefined && (
+                            <span className={`text-xs px-2 py-0.5 rounded ${
+                              result.score === 1 
+                                ? 'bg-green-100 text-green-800'
+                                : 'bg-red-100 text-red-800'
+                            }`}>
+                              Score: {result.score}
+                            </span>
+                          )}
                         </div>
-                        <div className="bg-green-50 rounded-lg p-4 font-mono text-sm text-green-800 border border-green-200">
+                        <div className={`rounded-lg p-4 font-mono text-sm border ${
+                          result.score === 1 
+                            ? 'bg-green-50 text-green-800 border-green-200'
+                            : 'bg-red-50 text-red-800 border-red-200'
+                        }`}>
                           {result.answer}
                         </div>
                       </div>
