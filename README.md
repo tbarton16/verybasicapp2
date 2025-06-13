@@ -16,13 +16,20 @@ User=tessabarton
 Environment=PORT=5000
 
 [Install]
-WantedBy=multi-user.target```
+WantedBy=multi-user.target
+```
 
 
-```sudo systemctl daemon-reload```
-```sudo systemctl enable --now ngrok.service```
-```sudo systemctl status ngrok.service --no-pager```
-``` sudo systemctl restart prompt-runner```
+``` sudo systemctl daemon-reload ```
+
+
+``` sudo systemctl enable --now ngrok.service ```
+
+
+``` sudo systemctl status ngrok.service --no-pager ```
+
+
+``` sudo systemctl restart prompt-runner ```
 
 ```[Unit]
 Description=Ngrok reverse proxy
