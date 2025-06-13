@@ -21,6 +21,7 @@ export const executionResults = pgTable("execution_results", {
   score: real("score"), // Score between 0 and 1
   model: text("model").notNull().default('gpt-nano'),
   answer: text("answer"), // Expected answer for the prompt
+  extractedAnswer: text("extracted_answer"), // The answer extracted from the model's response
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
@@ -49,9 +50,9 @@ export type WebSocketMessage =
   | { type: 'error'; sessionId: string; error: string };
 
 // Model types
-export type Model = 'gpt-nano' | 'gemma' | 'qwen' | 'llama';
+export type Model = 'gpt-nano' | 'gemma' | 'qwen' | 'llama' | 'sarvam-m';
 
-export const AVAILABLE_MODELS: Model[] = ['gpt-nano', 'gemma', 'qwen', 'llama'];
+export const AVAILABLE_MODELS: Model[] = ['gpt-nano', 'gemma', 'qwen', 'llama', 'sarvam-m'];
 
 // PromptFile type is now a string that represents the filename without extension
 export type PromptFile = string;

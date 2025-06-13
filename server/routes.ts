@@ -42,18 +42,6 @@ async function appendToLog(sessionId: string, prompt: string, response: string, 
 
 // Function to score a response
 function scoreResponse(response: string, expectedAnswer: string): number {
-  // Extract the final answer from both responses
-  const extractFinalAnswer = (text: string): string => {
-    // Look for the pattern "#### number" at the end
-    const match = text.match(/####\s*(\d+)$/);
-    if (match) {
-      return match[1];
-    }
-    // If no match, try to find the last number in the text
-    const numbers = text.match(/\d+/g);
-    return numbers ? numbers[numbers.length - 1] : "";
-  };
-
   const modelAnswer = extractFinalAnswer(response);
   const correctAnswer = extractFinalAnswer(expectedAnswer);
 
@@ -106,6 +94,11 @@ async function callOpenAIAPI(prompt: string, model: Model): Promise<{ response: 
       modelName: 'meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8',
       apiUrl: process.env.LLAMA_API_URL || "https://api.together.xyz/v1/chat/completions",
       apiKey: process.env.TOGETHER_API_KEY || ""
+    },
+    'sarvam-m': {
+      modelName: 'sarvam-m',
+      apiUrl: process.env.SARVAM_API_URL || 'https://api.sarvam.ai/v1/chat/completions',
+      apiKey: process.env.SARVAM_API_KEY || ""
     }
   };
 
@@ -209,6 +202,22 @@ async function getBestScore(question: string, answer: string, model: Model, numA
   return { bestScore, bestResponse, totalTokens };
 }
 
+const extractFinalAnswer = (text: string): string => {
+  // First try to find the pattern "#### number" at the end
+  const match = text.match(/####\s*([\d,]+)$/);
+  if (match) {
+    // Remove commas from the matched number
+    return match[1].replace(/,/g, '');
+  }
+  // If no match, try to find the last number in the text
+  const numbers = text.match(/\d+(?:[,.]\d+)*/g);
+  if (numbers) {
+    // Remove commas from the last number
+    return numbers[numbers.length - 1].replace(/,/g, '');
+  }
+  return "";
+}
+
 async function executePrompts(sessionId: string, model: Model, promptFile: PromptFile) {
   console.log(`Starting execution for session: ${sessionId} with model: ${model} and prompt file: ${promptFile}`);
   const session = activeSessions.get(sessionId);
@@ -284,6 +293,8 @@ async function executePrompts(sessionId: string, model: Model, promptFile: Promp
         const { bestScore, bestResponse, totalTokens } = await getBestScore(question, answer, model);
         const duration = Date.now() - startTime;
 
+        const extractedAnswer = extractFinalAnswer(singleResponse);
+
         // Log both responses
         await appendToLog(sessionId, question, singleResponse, model);
         await appendToLog(sessionId, question, bestResponse, model);
@@ -316,6 +327,7 @@ async function executePrompts(sessionId: string, model: Model, promptFile: Promp
           tokens: singleTokens + totalTokens,
           score: singleScore,
           answer: answer,
+          extractedAnswer: extractedAnswer,
         });
       } catch (error) {
         const duration = Date.now() - startTime;

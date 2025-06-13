@@ -28,6 +28,38 @@ import {
 } from "@/components/ui/select";
 import { ScoreChart } from "@/components/ScoreChart";
 
+// Mapping for readable prompt file names
+const PROMPT_FILE_NAMES: Record<string, string> = {
+  'gsm8k_chinese': '🇨🇳 GSM8K - 中文 (Chinese)',
+  'gsm8k_arabic': '🇸🇦 GSM8K - العربية (Arabic)',
+  'gsm8k_indic_bn': '🇧🇩 GSM8K - বাংলা (Bengali)',
+  'gsm8k_indic_bn_roman': '🇧🇩 GSM8K - Bengali (Romanized)',
+  'gsm8k_indic_en': '🇮🇳 GSM8K - English',
+  'gsm8k_indic_gu': '🇮🇳 GSM8K - ગુજરાતી (Gujarati)',
+  'gsm8k_indic_gu_roman': '🇮🇳 GSM8K - Gujarati (Romanized)',
+  'gsm8k_indic_hi': '🇮🇳 GSM8K - हिन्दी (Hindi)',
+  'gsm8k_indic_hi_roman': '🇮🇳 GSM8K - Hindi (Romanized)',
+  'gsm8k_indic_kn': '🇮🇳 GSM8K - ಕನ್ನಡ (Kannada)',
+  'gsm8k_indic_kn_roman': '🇮🇳 GSM8K - Kannada (Romanized)',
+  'gsm8k_indic_ml': '🇮🇳 GSM8K - മലയാളം (Malayalam)',
+  'gsm8k_indic_ml_roman': '🇮🇳 GSM8K - Malayalam (Romanized)',
+  'gsm8k_indic_mr': '🇮🇳 GSM8K - मराठी (Marathi)',
+  'gsm8k_indic_mr_roman': '🇮🇳 GSM8K - Marathi (Romanized)',
+  'gsm8k_indic_or': '🇮🇳 GSM8K - ଓଡ଼ିଆ (Odia)',
+  'gsm8k_indic_or_roman': '🇮🇳 GSM8K - Odia (Romanized)',
+  'gsm8k_indic_pa': '🇮🇳 GSM8K - ਪੰਜਾਬੀ (Punjabi)',
+  'gsm8k_indic_pa_roman': '🇮🇳 GSM8K - Punjabi (Romanized)',
+  'gsm8k_indic_ta': '🇮🇳 GSM8K - தமிழ் (Tamil)',
+  'gsm8k_indic_ta_roman': '🇮🇳 GSM8K - Tamil (Romanized)',
+  'gsm8k_indic_te': '🇮🇳 GSM8K - తెలుగు (Telugu)',
+  'gsm8k_indic_te_roman': '🇮🇳 GSM8K - Telugu (Romanized)',
+};
+
+// Helper function to get display name for a prompt file
+const getPromptFileDisplayName = (file: PromptFile): string => {
+  return PROMPT_FILE_NAMES[file] || file;
+};
+
 export default function Home() {
   const [sessionId] = useState(() => "demo-session-main");
   const [selectedModel, setSelectedModel] = useState<Model>("gpt-nano");
@@ -294,13 +326,13 @@ export default function Home() {
                   value={selectedPromptFile}
                   onValueChange={(value: PromptFile) => setSelectedPromptFile(value)}
                 >
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Select prompt file" />
+                  <SelectTrigger className="w-[240px]">
+                    <SelectValue placeholder="Select benchmark" />
                   </SelectTrigger>
                   <SelectContent>
                     {promptFiles.files.map((file) => (
                       <SelectItem key={file} value={file}>
-                        {file}
+                        {getPromptFileDisplayName(file)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -536,8 +568,8 @@ export default function Home() {
                         ) : result.response ? (
                           <div>
                             {(() => {
-                              const parts = result.response.split(/(\d+)/);
-                              const numbers = result.response.match(/\d+/g) || [];
+                              const parts = result.response.split(/(\d+(?:[,.]\d+)?)/);
+                              const numbers = result.response.match(/\d+(?:[,.]\d+)?/g) || [];
                               const lastNumber = numbers[numbers.length - 1];
                               
                               return parts.map((part, index) => {
@@ -553,6 +585,19 @@ export default function Home() {
                         )}
                       </div>
                     </div>
+
+                    {/* Extracted Answer - Only show when status is success */}
+                    {result.status === 'success' && result.extractedAnswer && (
+                      <div className="mt-4">
+                        <div className="flex items-center space-x-2 mb-2">
+                          <Bot className="w-4 h-4 text-primary" />
+                          <span className="text-sm font-medium text-slate-700">AI Extracted Answer</span>
+                        </div>
+                        <div className="rounded-lg p-4 font-mono text-sm bg-primary/5 text-primary border border-primary/20">
+                          {result.extractedAnswer}
+                        </div>
+                      </div>
+                    )}
 
                     {/* Expected Answer - Only show when status is success */}
                     {result.status === 'success' && result.answer && (
