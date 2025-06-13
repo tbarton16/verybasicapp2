@@ -50,9 +50,9 @@ export type WebSocketMessage =
   | { type: 'error'; sessionId: string; error: string };
 
 // Model types
-export type Model = 'gpt-nano' | 'gemma' | 'qwen' | 'llama' | 'sarvam-m';
+export type Model = 'gpt-nano' | 'gemma-3-27b-it' | 'qwen' | 'llama-4-maverick' | 'sarvam-m' | 'gemma-3-12b' | 'gemma-3-1b-it' | 'gemma-3-4b-it' | 'mistral' | 'gpt-4.5-preview';
 
-export const AVAILABLE_MODELS: Model[] = ['gpt-nano', 'gemma', 'qwen', 'llama', 'sarvam-m'];
+export const AVAILABLE_MODELS: Model[] = ['gpt-nano', 'gemma-3-27b-it', 'qwen', 'llama-4-maverick', 'sarvam-m', 'gemma-3-12b', 'gemma-3-1b-it', 'gemma-3-4b-it', 'mistral', 'gpt-4.5-preview'];
 
 // PromptFile type is now a string that represents the filename without extension
 export type PromptFile = string;

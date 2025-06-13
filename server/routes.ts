@@ -56,10 +56,10 @@ function scoreResponse(response: string, expectedAnswer: string): number {
 
 async function callOpenAIAPI(prompt: string, model: Model): Promise<{ response: string; tokens: number }> {
   
-  if (model === 'gemma') {
+  if (model === 'gemma-3-27b-it' || model === 'gemma-3-1b-it' || model === 'gemma-3-4b-it') {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const response = await ai.models.generateContent({
-      model: "gemini-2.0-flash",
+      model: model,
       contents: prompt,
       config: {
         maxOutputTokens: 500
@@ -76,21 +76,21 @@ async function callOpenAIAPI(prompt: string, model: Model): Promise<{ response: 
   // Map our model names to actual API model names and their endpoints
   const modelConfig: Record<Model, { modelName: string; apiUrl: string; apiKey: string }> = {
     'gpt-nano': {
-      modelName: 'gpt-3.5-turbo',
+      modelName: 'gpt-4.1-nano-2025-04-14',
       apiUrl: process.env.OPENAI_API_URL || 'https://api.openai.com/v1/chat/completions',
       apiKey: process.env.OPENAI_API_KEY || ""
     },
-    'gemma': {
-      modelName: 'gemini-2.0-flash',
-      apiUrl: process.env.GEMMA_API_URL || 'https://api.gemma.ai/v1/chat/completions',
-      apiKey: process.env.API_KEY || ""
+    'gpt-4.5-preview': {
+      modelName: 'gpt-4.5-preview-2025-02-27',
+      apiUrl: process.env.OPENAI_API_URL || 'https://api.openai.com/v1/chat/completions',
+      apiKey: process.env.OPENAI_API_KEY || ""
     },
     'qwen': {
       modelName: 'Qwen/Qwen2.5-7B-Instruct-Turbo',
       apiUrl: process.env.QWEN_API_URL || "https://api.together.xyz/v1/chat/completions",
       apiKey: process.env.TOGETHER_API_KEY || ""
     },
-    'llama': {
+    'llama-4-maverick': {
       modelName: 'meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8',
       apiUrl: process.env.LLAMA_API_URL || "https://api.together.xyz/v1/chat/completions",
       apiKey: process.env.TOGETHER_API_KEY || ""
@@ -99,7 +99,13 @@ async function callOpenAIAPI(prompt: string, model: Model): Promise<{ response: 
       modelName: 'sarvam-m',
       apiUrl: process.env.SARVAM_API_URL || 'https://api.sarvam.ai/v1/chat/completions',
       apiKey: process.env.SARVAM_API_KEY || ""
+    },
+    'mistral': {
+      modelName: 'mistralai/Mistral-Small-24B-Instruct-2501',
+      apiUrl: process.env.MISTRAL_API_URL || "https://api.together.xyz/v1/chat/completions",
+      apiKey: process.env.TOGETHER_API_KEY || ""
     }
+    
   };
 
   const config = modelConfig[model];
