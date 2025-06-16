@@ -17,7 +17,8 @@ import {
   AlertTriangle,
   Download,
   Trash2,
-  Loader2
+  Loader2,
+  Trophy
 } from "lucide-react";
 import {
   Select,
@@ -27,6 +28,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ScoreChart } from "@/components/ScoreChart";
+import { useLocation } from "wouter";
 
 // Mapping for readable prompt file names
 const PROMPT_FILE_NAMES: Record<string, string> = {
@@ -34,7 +36,7 @@ const PROMPT_FILE_NAMES: Record<string, string> = {
   'gsm8k_arabic': '🇸🇦 GSM8K - العربية (Arabic)',
   'gsm8k_indic_bn': '🇧🇩 GSM8K - বাংলা (Bengali)',
   'gsm8k_indic_bn_roman': '🇧🇩 GSM8K - Bengali (Romanized)',
-  'gsm8k_indic_en': '🇮🇳 GSM8K - English',
+  'gsm8k_indic_en': '🇺🇸 GSM8K - English',
   'gsm8k_indic_gu': '🇮🇳 GSM8K - ગુજરાતી (Gujarati)',
   'gsm8k_indic_gu_roman': '🇮🇳 GSM8K - Gujarati (Romanized)',
   'gsm8k_indic_hi': '🇮🇳 GSM8K - हिन्दी (Hindi)',
@@ -64,7 +66,9 @@ export default function Home() {
   const [sessionId] = useState(() => "demo-session-main");
   const [selectedModel, setSelectedModel] = useState<Model>("gpt-nano");
   const [selectedPromptFile, setSelectedPromptFile] = useState<PromptFile>("");
+  const [selectedShots, setSelectedShots] = useState<number>(0);
   const { toast } = useToast();
+  const [location, setLocation] = useLocation();
 
   // Fetch available prompt files
   const { data: promptFiles = { files: [] } } = useQuery<{ files: PromptFile[] }>({
@@ -149,7 +153,8 @@ export default function Home() {
     mutationFn: () => apiRequest('POST', '/api/start-execution', { 
       sessionId,
       model: selectedModel,
-      promptFile: selectedPromptFile
+      promptFile: selectedPromptFile,
+      shots: selectedShots
     }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/execution-status', sessionId] });
@@ -267,9 +272,29 @@ export default function Home() {
               <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
                 <Bot className="text-white w-4 h-4" />
               </div>
-              <h1 className="text-xl font-semibold text-slate-900">Headroom Calclator</h1>
+              <h1 className="text-xl font-semibold text-slate-900">Headroom Calculator</h1>
             </div>
             <div className="flex items-center space-x-4">
+              <nav className="flex items-center space-x-1">
+                <Button
+                  variant={location === "/" ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => setLocation("/")}
+                  className="flex items-center space-x-2"
+                >
+                  <Terminal className="w-4 h-4" />
+                  <span>Execution</span>
+                </Button>
+                <Button
+                  variant={location === "/leaderboard" ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => setLocation("/leaderboard")}
+                  className="flex items-center space-x-2"
+                >
+                  <Trophy className="w-4 h-4" />
+                  <span>Leaderboard</span>
+                </Button>
+              </nav>
               <div className="flex items-center space-x-2">
                 <div className={`w-2 h-2 rounded-full ${
                   isRunning 
@@ -333,6 +358,22 @@ export default function Home() {
                     {promptFiles.files.map((file) => (
                       <SelectItem key={file} value={file}>
                         {getPromptFileDisplayName(file)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Select
+                  value={selectedShots.toString()}
+                  onValueChange={(value: string) => setSelectedShots(parseInt(value))}
+                >
+                  <SelectTrigger className="w-[120px]">
+                    <SelectValue placeholder="Shots" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Array.from({ length: 9 }, (_, i) => (
+                      <SelectItem key={i} value={i.toString()}>
+                        {i} shot{i !== 1 ? 's' : ''}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -432,7 +473,7 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Debug section */}
+          {/* Debug section 
           <div className="bg-slate-100 p-4 rounded-lg mb-4">
             <h3 className="font-medium mb-2">Debug Information:</h3>
             <pre className="text-sm">
@@ -446,7 +487,7 @@ export default function Home() {
               }, null, 2)}
             </pre>
           </div>
-
+          */}
           {/* Score Chart */}
           {executionStatus ? (
             <div className="border border-slate-200 rounded-lg p-4 mb-4">

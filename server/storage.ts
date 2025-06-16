@@ -8,6 +8,7 @@ export interface IStorage {
   // Execution results
   createExecutionResult(result: InsertExecutionResult): Promise<ExecutionResult>;
   getExecutionResultsBySession(sessionId: string): Promise<ExecutionResult[]>;
+  getAllExecutionResults(): Promise<ExecutionResult[]>;
   updateExecutionResult(id: number, updates: Partial<ExecutionResult>): Promise<ExecutionResult | undefined>;
   clearExecutionResults(sessionId: string): Promise<void>;
 }
@@ -55,7 +56,10 @@ export class MemStorage implements IStorage {
       duration: insertResult.duration ?? null,
       tokens: insertResult.tokens ?? null,
       score: insertResult.score ?? null,
+      bestScore: insertResult.bestScore ?? null,
       model: insertResult.model ?? 'gpt-nano',
+      answer: insertResult.answer ?? null,
+      extractedAnswer: insertResult.extractedAnswer ?? null,
       createdAt: new Date()
     };
     this.executionResults.set(id, result);
@@ -74,6 +78,18 @@ export class MemStorage implements IStorage {
     } catch (error) {
       console.error('Storage: Error getting results:', error);
       throw new Error(`Failed to get execution results: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  async getAllExecutionResults(): Promise<ExecutionResult[]> {
+    console.log('Storage: Getting all execution results');
+    try {
+      const results = Array.from(this.executionResults.values());
+      console.log(`Storage: Found ${results.length} total results`);
+      return results;
+    } catch (error) {
+      console.error('Storage: Error getting all results:', error);
+      throw new Error(`Failed to get all execution results: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 

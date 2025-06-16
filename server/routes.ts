@@ -74,7 +74,7 @@ async function callOpenAIAPI(prompt: string, model: Model): Promise<{ response: 
     };
   }
   // Map our model names to actual API model names and their endpoints
-  const modelConfig: Record<Model, { modelName: string; apiUrl: string; apiKey: string }> = {
+  const modelConfig: Partial<Record<Model, { modelName: string; apiUrl: string; apiKey: string }>> = {
     'gpt-nano': {
       modelName: 'gpt-4.1-nano-2025-04-14',
       apiUrl: process.env.OPENAI_API_URL || 'https://api.openai.com/v1/chat/completions',
@@ -109,6 +109,9 @@ async function callOpenAIAPI(prompt: string, model: Model): Promise<{ response: 
   };
 
   const config = modelConfig[model];
+  if (!config) {
+    throw new Error(`No configuration found for model: ${model}`);
+  }
   const apiKey = config.apiKey;
   const response = await fetch(config.apiUrl, {
     method: "POST",
@@ -180,12 +183,12 @@ async function loadPrompts(promptFile: PromptFile): Promise<{ question: string; 
 }
 
 // Function to get best score from multiple attempts
-async function getBestScore(question: string, answer: string, model: Model, numAttempts: number = 10): Promise<{ bestScore: number; bestResponse: string; totalTokens: number }> {
+async function getBestScore(question: string, answer: string, model: Model): Promise<{ bestScore: number; bestResponse: string; totalTokens: number }> {
   let bestScore = 0;
   let bestResponse = "";
   let totalTokens = 0;
 
-  for (let i = 0; i < numAttempts; i++) {
+  for (let i = 0; i < 10; i++) {
     try {
       const { response, tokens } = await callOpenAIAPI(question, model);
       const score = scoreResponse(response, answer);
@@ -208,6 +211,46 @@ async function getBestScore(question: string, answer: string, model: Model, numA
   return { bestScore, bestResponse, totalTokens };
 }
 
+// Function to create few-shot prompt with examples
+function createFewShotPrompt(currentQuestion: string, examples: { question: string; answer: string }[], shots: number): string {
+  if (shots === 0 || examples.length === 0) {
+    return currentQuestion;
+  }
+
+  // Randomly select 'shots' number of examples, excluding the current question
+  const availableExamples = examples.filter(ex => ex.question !== currentQuestion);
+  
+  if (availableExamples.length === 0) {
+    return currentQuestion;
+  }
+  
+  const selectedExamples = [];
+  const examplesCopy = [...availableExamples]; // Create a copy to avoid modifying the original
+  
+  for (let i = 0; i < Math.min(shots, examplesCopy.length); i++) {
+    const randomIndex = Math.floor(Math.random() * examplesCopy.length);
+    const selected = examplesCopy.splice(randomIndex, 1)[0];
+    selectedExamples.push(selected);
+  }
+
+  // Format the prompt with examples
+  let prompt = "";
+  if (shots > 0) {
+    prompt += "Here are some examples of similar problems and their solutions:\n\n";
+  }
+  selectedExamples.forEach((example, index) => {
+    prompt += `Example ${index + 1}:\nQuestion: ${example.question}\nAnswer: ${extractFinalAnswer(example.answer)}\n\n`;
+  });
+
+  if (shots > 0) {
+    prompt += `Now solve this problem:\nQuestion: ${currentQuestion}\nAnswer:`;
+  } else {
+    prompt += `Now solve this problem:\nQuestion: ${currentQuestion}\nAnswer:`;
+  }
+  
+  return prompt;
+}
+
 const extractFinalAnswer = (text: string): string => {
   // First try to find the pattern "#### number" at the end
   const match = text.match(/####\s*([\d,]+)$/);
@@ -224,8 +267,8 @@ const extractFinalAnswer = (text: string): string => {
   return "";
 }
 
-async function executePrompts(sessionId: string, model: Model, promptFile: PromptFile) {
-  console.log(`Starting execution for session: ${sessionId} with model: ${model} and prompt file: ${promptFile}`);
+async function executePrompts(sessionId: string, model: Model, promptFile: PromptFile, shots: number = 1) {
+  console.log(`Starting execution for session: ${sessionId} with model: ${model}, prompt file: ${promptFile}, and ${shots} shots`);
   const session = activeSessions.get(sessionId);
   if (!session) {
     console.log(`No session found for: ${sessionId}`);
@@ -275,10 +318,12 @@ async function executePrompts(sessionId: string, model: Model, promptFile: Promp
       }
       
       // Create pending result
+      const fewShotPrompt = createFewShotPrompt(question, prompts, shots);
       const pendingResult = await storage.createExecutionResult({
         sessionId,
         promptIndex: i + 1,
-        prompt: question,
+        //prompt: question,
+        prompt: fewShotPrompt,
         response: null,
         status: "pending",
         error: null,
@@ -291,19 +336,22 @@ async function executePrompts(sessionId: string, model: Model, promptFile: Promp
       const startTime = Date.now();
       
       try {
-        // Get single attempt for score1
-        const { response: singleResponse, tokens: singleTokens } = await callOpenAIAPI(question, model);
+        // Create few-shot prompt if shots > 0
+        // const fewShotPrompt = createFewShotPrompt(question, prompts, shots);
+        
+        // Get single attempt for score1 using few-shot prompt
+        const { response: singleResponse, tokens: singleTokens } = await callOpenAIAPI(fewShotPrompt, model);
         const singleScore = scoreResponse(singleResponse, answer);
         
-        // Get best of n attempts for score2
-        const { bestScore, bestResponse, totalTokens } = await getBestScore(question, answer, model);
+        // Get best of n attempts for score2 using few-shot prompt
+        const { bestScore, bestResponse, totalTokens } = await getBestScore(fewShotPrompt, answer, model);
         const duration = Date.now() - startTime;
 
         const extractedAnswer = extractFinalAnswer(singleResponse);
 
-        // Log both responses
-        await appendToLog(sessionId, question, singleResponse, model);
-        await appendToLog(sessionId, question, bestResponse, model);
+        // Log both responses (with the few-shot prompt)
+        await appendToLog(sessionId, fewShotPrompt, singleResponse, model);
+        await appendToLog(sessionId, fewShotPrompt, bestResponse, model);
         
         // Update running scores
         const currentStatus = sessionStatus.get(sessionId);
@@ -332,6 +380,7 @@ async function executePrompts(sessionId: string, model: Model, promptFile: Promp
           duration,
           tokens: singleTokens + totalTokens,
           score: singleScore,
+          bestScore: bestScore,
           answer: answer,
           extractedAnswer: extractedAnswer,
         });
@@ -399,7 +448,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // API Routes
   app.post("/api/start-execution", async (req, res) => {
     try {
-      const { sessionId, model, promptFile } = req.body;
+      const { sessionId, model, promptFile, shots } = req.body;
       
       if (!sessionId) {
         return res.status(400).json({ error: "Session ID required" });
@@ -411,6 +460,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (!promptFile || !getAvailablePromptFiles().includes(promptFile)) {
         return res.status(400).json({ error: "Invalid prompt file selected" });
+      }
+
+      if (shots === undefined || shots < 0 || shots > 8) {
+        return res.status(400).json({ error: "Invalid shots value. Must be between 0 and 8." });
       }
 
       let session = activeSessions.get(sessionId);
@@ -427,7 +480,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       session.shouldStop = false;
 
       // Start execution in background
-      executePrompts(sessionId, model, promptFile).catch((error) => {
+      executePrompts(sessionId, model, promptFile, shots).catch((error) => {
         console.error("Execution error:", error);
         sessionStatus.set(sessionId, {
           isRunning: false,
@@ -551,6 +604,73 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Get prompts count error:", error);
       res.status(500).json({ error: "Failed to get prompts count" });
+    }
+  });
+
+  app.get("/api/leaderboard", async (req, res) => {
+    try {
+      // Load preloaded data from CSV
+      
+      const allResults = await storage.getAllExecutionResults();
+      
+      // Group results by model and prompt file
+      const leaderboardData = new Map<string, {
+        model: string;
+        promptFile: string;
+        bestOf1: number;
+        bestOf10: number;
+        totalPrompts: number;
+        completedPrompts: number;
+        isPreloaded?: boolean;
+      }>();
+
+      // Process dynamic results from database
+      for (const result of allResults) {
+        if (!result.model || !result.sessionId || result.status !== 'success') continue;
+        
+        // For dynamic results, use 'combined' as prompt file or extract from sessionId if available
+        const promptFile = 'combined';
+        const key = `${result.model}-${promptFile}`;
+        
+        if (!leaderboardData.has(key)) {
+          leaderboardData.set(key, {
+            model: result.model,
+            promptFile: promptFile,
+            bestOf1: 0,
+            bestOf10: 0,
+            totalPrompts: 0,
+            completedPrompts: 0,
+            isPreloaded: false
+          });
+        }
+
+        const entry = leaderboardData.get(key)!;
+        if (!entry.isPreloaded) {
+          entry.completedPrompts += 1;
+          
+          // For best of 1, take the score directly
+          entry.bestOf1 += result.score || 0;
+          
+          // For best of 10, use the bestScore field
+          entry.bestOf10 += result.bestScore || 0;
+        }
+      }
+
+      // Convert to array and calculate averages for dynamic data
+      const leaderboard = Array.from(leaderboardData.values()).map(entry => ({
+        ...entry,
+        bestOf1: entry.isPreloaded ? entry.bestOf1 : (entry.completedPrompts > 0 ? entry.bestOf1 / entry.completedPrompts : 0),
+        bestOf10: entry.isPreloaded ? entry.bestOf10 : (entry.completedPrompts > 0 ? entry.bestOf10 / entry.completedPrompts : 0),
+        totalPrompts: entry.completedPrompts
+      }));
+
+      // Sort by best of 10 score descending
+      leaderboard.sort((a, b) => b.bestOf10 - a.bestOf10);
+
+      res.json(leaderboard);
+    } catch (error) {
+      console.error("Get leaderboard error:", error);
+      res.status(500).json({ error: "Failed to get leaderboard data" });
     }
   });
 

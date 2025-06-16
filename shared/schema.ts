@@ -18,7 +18,8 @@ export const executionResults = pgTable("execution_results", {
   error: text("error"),
   duration: integer("duration"), // in milliseconds
   tokens: integer("tokens"),
-  score: real("score"), // Score between 0 and 1
+  score: real("score"), // Score between 0 and 1 (single attempt)
+  bestScore: real("best_score"), // Best score from multiple attempts (best-of-10)
   model: text("model").notNull().default('gpt-nano'),
   answer: text("answer"), // Expected answer for the prompt
   extractedAnswer: text("extracted_answer"), // The answer extracted from the model's response
