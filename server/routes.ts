@@ -23,6 +23,133 @@ const sessionStatus = new Map<string, {
   promptCount2: number;  // Track number of prompts for average
 }>();
 
+// Translation mapping for few-shot prompt text
+const PROMPT_TRANSLATIONS = {
+  // English (default)
+  'en': {
+    examplesHeader: "Here are some examples of similar problems and their solutions:",
+    exampleLabel: "Example",
+    questionLabel: "Question:",
+    answerLabel: "Answer:",
+    nowSolveLabel: "Now solve this problem:",
+  },
+  // Chinese
+  'chinese': {
+    examplesHeader: "以下是一些类似问题的示例及其解答：",
+    exampleLabel: "示例",
+    questionLabel: "问题：",
+    answerLabel: "答案：",
+    nowSolveLabel: "现在解决这个问题：",
+  },
+  // Arabic
+  'arabic': {
+    examplesHeader: "إليك بعض الأمثلة على مشاكل مماثلة وحلولها:",
+    exampleLabel: "مثال",
+    questionLabel: "السؤال:",
+    answerLabel: "الجواب:",
+    nowSolveLabel: "الآن حل هذه المشكلة:",
+  },
+  // Hindi
+  'hi': {
+    examplesHeader: "यहाँ समान समस्याओं के कुछ उदाहरण और उनके समाधान हैं:",
+    exampleLabel: "उदाहरण",
+    questionLabel: "प्रश्न:",
+    answerLabel: "उत्तर:",
+    nowSolveLabel: "अब इस समस्या को हल करें:",
+  },
+  // Bengali
+  'bn': {
+    examplesHeader: "এখানে অনুরূপ সমস্যার কিছু উদাহরণ এবং তাদের সমাধান রয়েছে:",
+    exampleLabel: "উদাহরণ",
+    questionLabel: "প্রশ্ন:",
+    answerLabel: "উত্তর:",
+    nowSolveLabel: "এখন এই সমস্যার সমাধান করুন:",
+  },
+  // Tamil
+  'ta': {
+    examplesHeader: "இங்கே இதேபோன்ற பிரச்சினைகளின் சில உதாயரணங்கள் மற்றும் அவற்றின் தீர்வுகள் உள்ளன:",
+    exampleLabel: "உதாயரண",
+    questionLabel: "கேள்வி:",
+    answerLabel: "பதில்:",
+    nowSolveLabel: "இப்போது இந்த பிரச்சினையைத் தீர்க்கவும்:",
+  },
+  // Telugu
+  'te': {
+    examplesHeader: "ఇక్కడ సారూప్య సమస్యలకు కొన్ని ఉదాహరణలు మరియు వాటి పరిష్కారాలు ఉన్నాయి:",
+    exampleLabel: "ఉదాహరణ",
+    questionLabel: "ప్రశ్న:",
+    answerLabel: "జవాబు:",
+    nowSolveLabel: "ఇప్పుడు ఈ సమస్యను పరిష్కరించండి:",
+  },
+  // Gujarati
+  'gu': {
+    examplesHeader: "અહીં સમાન સમસ્યાઓના કેટલાક ઉદાહરણો અને તેમના ઉકેલો છે:",
+    exampleLabel: "ઉદાહરણ",
+    questionLabel: "પ્રશ્ન:",
+    answerLabel: "જવાબ:",
+    nowSolveLabel: "હવે આ સમસ્યાનો ઉકેલ કરો:",
+  },
+  // Kannada
+  'kn': {
+    examplesHeader: "ಇಲ್ಲಿ ಸಮಾನ ಸಮಸ್ಯೆಗಳ ಕೆಲವು ಉದಾಹರಣೆಗಳು ಮತ್ತು ಅವುಗಳ ಪರಿಹಾರಗಳಿವೆ:",
+    exampleLabel: "ಉದಾಹರಣೆ",
+    questionLabel: "ಪ್ರಶ್ನೆ:",
+    answerLabel: "ಉತ್ತರ:",
+    nowSolveLabel: "ಈಗ ಈ ಸಮಸ್ಯೆಯನ್ನು ಪರಿಹರಿಸಿ:",
+  },
+  // Malayalam
+  'ml': {
+    examplesHeader: "ഇവിടെ സമാന പ്രശ്നങ്ങളുടെ ചില ഉദാഹരണങ്ങളും അവയുടെ പരിഹാരങ്ങളും ഉണ്ട്:",
+    exampleLabel: "ഉദാഹരണം",
+    questionLabel: "ചോദ്യം:",
+    answerLabel: "ഉത്തരം:",
+    nowSolveLabel: "ഇപ്പോൾ ഈ പ്രശ്നം പരിഹരിക്കുക:",
+  },
+  // Marathi
+  'mr': {
+    examplesHeader: "येथे समान समस्यांची काही उदाहरणे आणि त्यांची उत्तरे आहेत:",
+    exampleLabel: "उदाहरण",
+    questionLabel: "प्रश्न:",
+    answerLabel: "उत्तर:",
+    nowSolveLabel: "आता ही समस्या सोडवा:",
+  },
+  // Odia
+  'or': {
+    examplesHeader: "ଏଠାରେ ସମାନ ସମସ୍ୟାର କିଛି ଉଦାହରଣ ଏବଂ ସେମାନଙ୍କର ସମାଧାନ ଅଛି:",
+    exampleLabel: "ଉଦାହରଣ",
+    questionLabel: "ପ୍ରଶ୍ନ:",
+    answerLabel: "ଉତ୍ତର:",
+    nowSolveLabel: "ବର୍ତ୍ତମାନ ଏହି ସମସ୍ୟାର ସମାଧାନ କରନ୍ତୁ:",
+  },
+  // Punjabi
+  'pa': {
+    examplesHeader: "ਇੱਥੇ ਸਮਾਨ ਸਮੱਸਿਆਵਾਂ ਦੀਆਂ ਕੁਝ ਉਦਾਹਰਣਾਂ ਅਤੇ ਉਨ੍ਹਾਂ ਦੇ ਹੱਲ ਹਨ:",
+    exampleLabel: "ਉਦਾਹਰਣ",
+    questionLabel: "ਸਵਾਲ:",
+    answerLabel: "ਜਵਾਬ:",
+    nowSolveLabel: "ਹੁਣ ਇਸ ਸਮੱਸਿਆ ਨੂੰ ਹੱਲ ਕਰੋ:",
+  },
+};
+
+// Function to detect language from prompt file name
+function getLanguageFromPromptFile(promptFile: PromptFile): keyof typeof PROMPT_TRANSLATIONS {
+  const filename = promptFile.toLowerCase();
+  if (filename.includes('chinese')) return 'chinese';
+  if (filename.includes('arabic')) return 'arabic';
+  if (filename.includes('_bn') || filename.includes('bengali')) return 'bn';
+  if (filename.includes('_hi') || filename.includes('hindi')) return 'hi';
+  if (filename.includes('_ta') || filename.includes('tamil')) return 'ta';
+  if (filename.includes('_te') || filename.includes('telugu')) return 'te';
+  if (filename.includes('_gu') || filename.includes('gujarati')) return 'gu';
+  if (filename.includes('_kn') || filename.includes('kannada')) return 'kn';
+  if (filename.includes('_ml') || filename.includes('malayalam')) return 'ml';
+  if (filename.includes('_mr') || filename.includes('marathi')) return 'mr';
+  if (filename.includes('_or') || filename.includes('odia')) return 'or';
+  if (filename.includes('_pa') || filename.includes('punjabi')) return 'pa';
+  
+  return 'en'; // Default to English
+}
+
 // Function to append response to log file
 async function appendToLog(sessionId: string, prompt: string, response: string, model: Model) {
   const date = new Date().toISOString().split('T')[0]; // Get YYYY-MM-DD format
@@ -212,7 +339,7 @@ async function getBestScore(question: string, answer: string, model: Model): Pro
 }
 
 // Function to create few-shot prompt with examples
-function createFewShotPrompt(currentQuestion: string, examples: { question: string; answer: string }[], shots: number): string {
+function createFewShotPrompt(currentQuestion: string, examples: { question: string; answer: string }[], shots: number, promptFile?: PromptFile): string {
   if (shots === 0 || examples.length === 0) {
     return currentQuestion;
   }
@@ -233,19 +360,23 @@ function createFewShotPrompt(currentQuestion: string, examples: { question: stri
     selectedExamples.push(selected);
   }
 
-  // Format the prompt with examples
+  // Get translations based on prompt file language
+  const language = promptFile ? getLanguageFromPromptFile(promptFile) : 'en';
+  const translations = PROMPT_TRANSLATIONS[language];
+
+  // Format the prompt with examples using appropriate language
   let prompt = "";
   if (shots > 0) {
-    prompt += "Here are some examples of similar problems and their solutions:\n\n";
+    prompt += translations.examplesHeader + "\n\n";
   }
   selectedExamples.forEach((example, index) => {
-    prompt += `Example ${index + 1}:\nQuestion: ${example.question}\nAnswer: ${extractFinalAnswer(example.answer)}\n\n`;
+    prompt += `${translations.exampleLabel} ${index + 1}:\n${translations.questionLabel} ${example.question}\n${translations.answerLabel} ${extractFinalAnswer(example.answer)}\n\n`;
   });
 
   if (shots > 0) {
-    prompt += `Now solve this problem:\nQuestion: ${currentQuestion}\nAnswer:`;
+    prompt += `${translations.nowSolveLabel}\n${translations.questionLabel} ${currentQuestion}\n${translations.answerLabel}`;
   } else {
-    prompt += `Now solve this problem:\nQuestion: ${currentQuestion}\nAnswer:`;
+    prompt += `${currentQuestion}\n:`;
   }
   
   return prompt;
@@ -318,7 +449,7 @@ async function executePrompts(sessionId: string, model: Model, promptFile: Promp
       }
       
       // Create pending result
-      const fewShotPrompt = createFewShotPrompt(question, prompts, shots);
+      const fewShotPrompt = createFewShotPrompt(question, prompts, shots, promptFile);
       const pendingResult = await storage.createExecutionResult({
         sessionId,
         promptIndex: i + 1,

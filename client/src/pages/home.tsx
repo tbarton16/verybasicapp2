@@ -452,10 +452,6 @@ export default function Home() {
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold text-slate-900">Execution Results</h2>
             <div className="flex items-center space-x-3">
-              <Button variant="ghost" size="sm" className="text-slate-500 hover:text-slate-700">
-                <Download className="w-4 h-4 mr-2" />
-                Export Results
-              </Button>
               <Button 
                 variant="ghost" 
                 size="sm" 
