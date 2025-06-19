@@ -48,7 +48,7 @@ export default function Leaderboard() {
       completedPrompts: 1009
     },
     {
-      model: "qwen",
+      model: "qwen-2.5-7b",
       promptFile: "gsm8k-gujarati.jsonl",
       bestOf1: 0.33,
       bestOf10: 0.33,

@@ -212,7 +212,12 @@ async function callOpenAIAPI(prompt: string, model: Model): Promise<{ response: 
       apiUrl: process.env.OPENAI_API_URL || 'https://api.openai.com/v1/chat/completions',
       apiKey: process.env.OPENAI_API_KEY || ""
     },
-    'qwen': {
+    'gpt-4.1-2025': {
+      modelName: 'gpt-4.1-2025-04-14',
+      apiUrl: process.env.OPENAI_API_URL || 'https://api.openai.com/v1/chat/completions',
+      apiKey: process.env.OPENAI_API_KEY || ""
+    },
+    'qwen-2.5-7b': {
       modelName: 'Qwen/Qwen2.5-7B-Instruct-Turbo',
       apiUrl: process.env.QWEN_API_URL || "https://api.together.xyz/v1/chat/completions",
       apiKey: process.env.TOGETHER_API_KEY || ""
@@ -231,6 +236,16 @@ async function callOpenAIAPI(prompt: string, model: Model): Promise<{ response: 
       modelName: 'mistralai/Mistral-Small-24B-Instruct-2501',
       apiUrl: process.env.MISTRAL_API_URL || "https://api.together.xyz/v1/chat/completions",
       apiKey: process.env.TOGETHER_API_KEY || ""
+    },
+    'deepseek-coder-v2-base': {
+      modelName: 'accounts/tbarton16/deployedModels/deepseek-coder-v2-lite-base-yvtx5lll',
+      apiUrl: process.env.DEEPSEEK_API_URL || "https://api.fireworks.ai/inference/v1/chat/completions",
+      apiKey: process.env.FIREWORKS_API_KEY || ""
+    },
+    'mistral-nemo': {
+      modelName: 'accounts/tbarton16/deployedModels/mistral-nemo-base-2407-sp6ek5qe',
+      apiUrl: process.env.MISTRAL_NEMO_API_URL || "https://api.fireworks.ai/inference/v1/chat/completions",
+      apiKey: process.env.FIREWORKS_API_KEY || ""
     }
     
   };
@@ -382,15 +397,42 @@ function createFewShotPrompt(currentQuestion: string, examples: { question: stri
   return prompt;
 }
 
+const ZEROES = [
+  0x0966, // Hindi/Devanagari ०
+  0x09E6, // Bengali ০
+  0x0B66, // Odia ୦
+  0x0BE6, // Tamil ௦
+  0x0CE6, // Kannada ೦
+  0x0D66  // Malayalam ൦
+];
+
+const toLatinDigits = (s: string): string => {
+  return Array.from(s, ch => {
+    const cp = ch.codePointAt(0)!;
+
+    // Fast-path for ASCII digits
+    if (cp >= 0x30 && cp <= 0x39) return ch;
+
+    for (const zero of ZEROES) {
+      if (cp >= zero && cp <= zero + 9) {
+        return String(cp - zero);    // distance from that script’s “0”
+      }
+    }
+    return ch;                       // leave everything else untouched
+  }).join('');
+};
+
 const extractFinalAnswer = (text: string): string => {
+
+  const asciiText = toLatinDigits(text);
   // First try to find the pattern "#### number" at the end
-  const match = text.match(/####\s*([\d,]+)$/);
+  const match = asciiText.match(/####\s*([\d,]+)$/);
   if (match) {
     // Remove commas from the matched number
     return match[1].replace(/,/g, '');
   }
   // If no match, try to find the last number in the text
-  const numbers = text.match(/\d+(?:[,.]\d+)*/g);
+  const numbers = asciiText.match(/\d+(?:[,.]\d+)*/g);
   if (numbers) {
     // Remove commas from the last number
     return numbers[numbers.length - 1].replace(/,/g, '');

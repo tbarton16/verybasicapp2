@@ -62,6 +62,18 @@ const getPromptFileDisplayName = (file: PromptFile): string => {
   return PROMPT_FILE_NAMES[file] || file;
 };
 
+// Categorize models into base and instruction-tuned
+const BASE_MODELS = AVAILABLE_MODELS.filter(model => 
+  !model.includes('-it') && !model.includes('gpt-4.5-preview') && !model.includes('gpt-4.1-2025')
+   && !model.includes('gpt-nano') && !model.includes('sarvam-m') && !model.includes('qwen-2.5-7b') &&
+    !model.includes('llama-4-maverick')&& !model.includes('gemma-3-12b') 
+);
+const INSTRUCTION_TUNED_MODELS = AVAILABLE_MODELS.filter(model => 
+  model.includes('-it') || model.includes('gpt-4.5-preview') || !model.includes('deepseek-coder-v2-base') ||
+   model.includes('gpt-nano') || model.includes('sarvam-m') || model.includes('qwen-2.5-7b') ||
+    model.includes('llama-4-maverick') || model.includes('gemma-3-12b') || !model.includes('mistral-nemo') 
+);
+
 export default function Home() {
   const [sessionId] = useState(() => "demo-session-main");
   const [selectedModel, setSelectedModel] = useState<Model>("gpt-nano");
@@ -335,13 +347,31 @@ export default function Home() {
                   value={selectedModel}
                   onValueChange={(value: Model) => setSelectedModel(value)}
                 >
-                  <SelectTrigger className="w-[180px]">
+                  <SelectTrigger className="w-[240px]">
                     <SelectValue placeholder="Select model" />
                   </SelectTrigger>
                   <SelectContent>
-                    {AVAILABLE_MODELS.map((model) => (
+                    {BASE_MODELS.map((model) => (
                       <SelectItem key={model} value={model}>
-                        {model}
+                        <div className="flex items-center justify-between w-full">
+                          <span>{model}</span>
+                          <Badge variant="secondary" className="ml-2 bg-green-100 text-green-800 border-green-200">
+                            base model
+                          </Badge>
+                        </div>
+                      </SelectItem>
+                    ))}
+                    {BASE_MODELS.length > 0 && INSTRUCTION_TUNED_MODELS.length > 0 && (
+                      <div className="border-t border-slate-200 my-1"></div>
+                    )}
+                    {INSTRUCTION_TUNED_MODELS.map((model) => (
+                      <SelectItem key={model} value={model}>
+                        <div className="flex items-center justify-between w-full">
+                          <span>{model}</span>
+                          <Badge variant="secondary" className="ml-2 bg-yellow-100 text-yellow-800 border-yellow-200">
+                            finetuned
+                          </Badge>
+                        </div>
                       </SelectItem>
                     ))}
                   </SelectContent>

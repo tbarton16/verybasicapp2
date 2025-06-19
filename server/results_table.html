@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Model Performance by Language</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 100%;
+            overflow-x: auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 16px;
+        }
+        th, td {
+            padding: 8px;
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+        th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            font-size: 14px;
+        }
+        .model-name {
+            text-align: left;
+            font-weight: bold;
+            background-color: #f8f9fa;
+            position: sticky;
+            left: 0;
+            z-index: 5;
+            max-width: 250px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-size: 14px;
+        }
+        .result-cell {
+            width: 30px;
+            height: 30px;
+            position: relative;
+            padding: 0;
+        }
+        .result-square {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            border-radius: 0;
+            border: 1px solid #ccc;
+        }
+        .correct {
+            background-color: #28a745;
+        }
+        .incorrect {
+            background-color: #dc3545;
+        }
+        .legend {
+            margin: 20px 0;
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .legend-square {
+            width: 16px;
+            height: 16px;
+            border-radius: 2px;
+            border: 1px solid #ccc;
+        }
+        .summary {
+            margin: 20px 0;
+            text-align: center;
+            color: #666;
+        }
+        th.lang-header {
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+            min-width: 30px;
+            max-width: 30px;
+            white-space: nowrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>AI Model Performance by Language</h1>
+        
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-square correct"></div>
+                <span>Correct Answer</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-square incorrect"></div>
+                <span>Incorrect Answer</span>
+            </div>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th class="model-name">Model</th>
+                    <th class="lang-header">English</th>
+                    <th class="lang-header">Spanish</th>
+                    <th class="lang-header">French</th>
+                    <th class="lang-header">German</th>
+                    <th class="lang-header">Italian</th>
+                    <th class="lang-header">Portuguese</th>
+                    <th class="lang-header">Dutch</th>
+                    <th class="lang-header">Swedish</th>
+                    <th class="lang-header">Greek</th>
+                    <th class="lang-header">Russian</th>
+                    <th class="lang-header">Arabic</th>
+                    <th class="lang-header">Hebrew</th>
+                    <th class="lang-header">Japanese</th>
+                    <th class="lang-header">Korean</th>
+                    <th class="lang-header">Hindi</th>
+                    <th class="lang-header">Chinese (Mandarin)</th>
+                    <th class="lang-header">Turkish</th>
+                    <th class="lang-header">Polish</th>
+                    <th class="lang-header">Danish</th>
+                    <th class="lang-header">Finnish</th>
+                    <th class="lang-header">Norwegian</th>
+                    <th class="lang-header">Thai</th>
+                    <th class="lang-header">Vietnamese</th>
+                    <th class="lang-header">Indonesian</th>
+                    <th class="lang-header">Swahili</th>
+                    <th class="lang-header">Bengali</th>
+                    <th class="lang-header">Tamil</th>
+                    <th class="lang-header">Telugu</th>
+                    <th class="lang-header">Kannada</th>
+                    <th class="lang-header">Malayalam</th>
+                    <th class="lang-header">Marathi</th>
+                    <th class="lang-header">Gujarati</th>
+                    <th class="lang-header">Punjabi</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="model-name" title="gpt-4.1-nano-2025-04-14">gpt-4.1-nano-2025-04-14</td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                </tr>
+                <tr>
+                    <td class="model-name" title="gpt-4.1-2025-04-14">gpt-4.1-2025-04-14</td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                </tr>
+                <tr>
+                    <td class="model-name" title="gpt-4o-2024-11-20">gpt-4o-2024-11-20</td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                </tr>
+                <tr>
+                    <td class="model-name" title="claude-3-7-sonnet-20250219">claude-3-7-sonnet-20250219</td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                </tr>
+                <tr>
+                    <td class="model-name" title="claude-sonnet-4-20250514">claude-sonnet-4-20250514</td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                </tr>
+                <tr>
+                    <td class="model-name" title="gemini-1.5-pro-002">gemini-1.5-pro-002</td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                </tr>
+                <tr>
+                    <td class="model-name" title="gemini-1.5-flash-002">gemini-1.5-flash-002</td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                </tr>
+                <tr>
+                    <td class="model-name" title="deepseek-ai/DeepSeek-V3">deepseek-ai/DeepSeek-V3</td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                </tr>
+                <tr>
+                    <td class="model-name" title="meta-llama/Llama-4-Scout-17B-16E-Instruct">meta-llama/Llama-4-Scout-17B-16E-Instruct</td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                </tr>
+                <tr>
+                    <td class="model-name" title="meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8">meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8</td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square incorrect"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                    <td class="result-cell"><div class="result-square correct"></div></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="summary">
+            <p>This table shows AI model performance on letter counting tasks across 33 languages.</p>
+            <p>Green squares indicate correct answers, red squares indicate incorrect answers.</p>
+            <p>Total models tested: 10</p>
+        </div>
+    </div>
+</body>
+</html>
